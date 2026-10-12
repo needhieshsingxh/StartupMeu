@@ -2,7 +2,14 @@ function formatAmount(value) {
   return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value);
 }
 
-export default function StartupCard({ startup, onOpen, onEdit, onDelete }) {
+export default function StartupCard({ startup, currentUser, onOpen, onEdit, onDelete }) {
+  const currentUserId = currentUser?.id || currentUser?._id;
+  const isOwner = Boolean(
+    currentUserId &&
+    startup.owner &&
+    (String(startup.owner) === String(currentUserId) || String(startup.owner._id || '') === String(currentUserId))
+  );
+
   return (
     <article className="startup-card">
       <div className="card-kicker">
@@ -19,10 +26,12 @@ export default function StartupCard({ startup, onOpen, onEdit, onDelete }) {
         <button className="text-link" type="button" onClick={() => onOpen(startup._id)}>
           View profile <span aria-hidden="true">↗</span>
         </button>
-        <div className="founder-actions" aria-label={`Manage ${startup.name} profile`}>
-          <button type="button" onClick={() => onEdit(startup)} aria-label={`Edit ${startup.name}`}>Edit</button>
-          <button type="button" onClick={() => onDelete(startup)} aria-label={`Delete ${startup.name}`}>Delete</button>
-        </div>
+        {isOwner && (
+          <div className="founder-actions" aria-label={`Manage ${startup.name} profile`}>
+            <button type="button" onClick={() => onEdit(startup)} aria-label={`Edit ${startup.name}`}>Edit</button>
+            <button type="button" onClick={() => onDelete(startup)} aria-label={`Delete ${startup.name}`}>Delete</button>
+          </div>
+        )}
       </div>
     </article>
   );

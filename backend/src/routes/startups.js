@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { Startup, stages } = require('../models/Startup');
 const ConnectionRequest = require('../models/ConnectionRequest');
+const { requireAuth, optionalAuth } = require('../middleware/auth');
 
 const router = express.Router();
 const startupFields = ['name', 'tagline', 'description', 'industry', 'stage', 'location', 'fundingRequired'];
@@ -12,6 +13,7 @@ function asyncHandler(handler) {
 
 function validateStartup(body, partial = false) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return 'Request body must be an object';
+  delete body.owner;
   const unknown = Object.keys(body).find((field) => !startupFields.includes(field));
   if (unknown) return `Unknown field: ${unknown}`;
 
@@ -94,31 +96,52 @@ router.get('/:id', asyncHandler(async (req, res) => {
   return res.json({ data: startup });
 }));
 
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', requireAuth, asyncHandler(async (req, res) => {
   const error = validateStartup(req.body);
   if (error) return res.status(400).json({ error });
-  const startup = await Startup.create(req.body);
+  const startup = await Startup.create({
+    ...req.body,
+    owner: req.user._id,
+  });
   return res.status(201).json({ data: startup });
 }));
 
-router.patch('/:id', asyncHandler(async (req, res) => {
+router.patch('/:id', requireAuth, asyncHandler(async (req, res) => {
   if (!validId(req.params.id)) return res.status(400).json({ error: 'Invalid startup ID' });
   const error = validateStartup(req.body, true);
   if (error) return res.status(400).json({ error });
-  const startup = await Startup.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-  if (!startup) return res.status(404).json({ error: 'Startup not found' });
+
+  const existing = await Startup.findById(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Startup not found' });
+
+  if (!existing.owner || existing.owner.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ error: 'Forbidden. You do not have permission to modify this startup.' });
+  }
+
+  const updates = { ...req.body };
+  delete updates.owner;
+  delete updates._id;
+
+  const startup = await Startup.findByIdAndUpdate(req.params.id, updates, { new: true, runValidators: true });
   return res.json({ data: startup });
 }));
 
-router.delete('/:id', asyncHandler(async (req, res) => {
+router.delete('/:id', requireAuth, asyncHandler(async (req, res) => {
   if (!validId(req.params.id)) return res.status(400).json({ error: 'Invalid startup ID' });
+
+  const existing = await Startup.findById(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Startup not found' });
+
+  if (!existing.owner || existing.owner.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ error: 'Forbidden. You do not have permission to delete this startup.' });
+  }
+
   const startup = await Startup.findByIdAndDelete(req.params.id);
-  if (!startup) return res.status(404).json({ error: 'Startup not found' });
   await ConnectionRequest.deleteMany({ startup: startup._id });
   return res.json({ data: startup });
 }));
 
-router.post('/:id/connection-requests', asyncHandler(async (req, res) => {
+router.post('/:id/connection-requests', optionalAuth, asyncHandler(async (req, res) => {
   if (!validId(req.params.id)) return res.status(400).json({ error: 'Invalid startup ID' });
   const startup = await Startup.findById(req.params.id).select('_id');
   if (!startup) return res.status(404).json({ error: 'Startup not found' });
@@ -134,11 +157,24 @@ router.post('/:id/connection-requests', asyncHandler(async (req, res) => {
   }
   const connectionRequest = await ConnectionRequest.create({
     startup: startup._id,
-    investorName,
-    investorEmail,
-    message,
+    investorName: investorName.trim(),
+    investorEmail: investorEmail.trim().toLowerCase(),
+    message: message.trim(),
   });
   return res.status(201).json({ data: { id: connectionRequest._id, message: 'Connection request sent.' } });
+}));
+
+router.get('/:id/connection-requests', requireAuth, asyncHandler(async (req, res) => {
+  if (!validId(req.params.id)) return res.status(400).json({ error: 'Invalid startup ID' });
+  const startup = await Startup.findById(req.params.id).select('_id owner');
+  if (!startup) return res.status(404).json({ error: 'Startup not found' });
+
+  if (!startup.owner || startup.owner.toString() !== req.user._id.toString()) {
+    return res.status(403).json({ error: 'Forbidden. You do not have permission to view connection requests for this startup.' });
+  }
+
+  const requests = await ConnectionRequest.find({ startup: startup._id }).sort({ createdAt: -1 });
+  return res.json({ data: requests });
 }));
 
 module.exports = router;

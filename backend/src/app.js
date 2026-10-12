@@ -1,11 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const authRoutes = require('./routes/auth');
 const startupRoutes = require('./routes/startups');
 
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
+app.use(cors({
+  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  credentials: true,
+}));
 app.use(express.json({ limit: '20kb' }));
 
 app.get('/api/health', (_req, res) => {
@@ -14,6 +18,7 @@ app.get('/api/health', (_req, res) => {
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
   });
 });
+app.use('/api/auth', authRoutes);
 app.use('/api/startups', startupRoutes);
 
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));

@@ -37,6 +37,12 @@ const startupSchema = new mongoose.Schema({
     min: [0, 'Funding requirement cannot be negative'],
     max: [1000000000000, 'Funding requirement is too large'],
   },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+    index: true,
+  },
 }, { timestamps: true });
 
 startupSchema.index({ industry: 1, stage: 1, location: 1 });
