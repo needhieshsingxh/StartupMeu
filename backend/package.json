@@ -1,8 +1,8 @@
 {
-  "name": "devtask-backend",
+  "name": "startupmeu-connect-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Express and MongoDB API for DevTask",
+  "description": "Express and MongoDB API for StartupMeu Connect",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

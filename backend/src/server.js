@@ -9,10 +9,10 @@ async function start() {
     throw new Error('MONGODB_URI is required. Copy .env.example to .env and configure it.');
   }
   await mongoose.connect(process.env.MONGODB_URI);
-  app.listen(port, () => console.log(`DevTask API listening on port ${port}`));
+  app.listen(port, () => console.log(`StartupMeu Connect API listening on port ${port}`));
 }
 
 start().catch((error) => {
-  console.error(`Unable to start DevTask API: ${error.message}`);
+  console.error(`Unable to start StartupMeu Connect API: ${error.message}`);
   process.exit(1);
 });
