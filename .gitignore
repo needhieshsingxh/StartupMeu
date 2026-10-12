@@ -1,0 +1,35 @@
+# Environment files: commit templates only, never real credentials.
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated output
+node_modules/
+dist/
+coverage/
+
+# CodeZero task metadata and unrelated downloaded source
+.code0/
+/taskflow/
+
+# Local logs and OS/editor files
+*.log
+.DS_Store
+.vscode/
+
+# Additional generated output and logs
+build/
+logs/
+.vite/
+*.tsbuildinfo
+
+# Additional IDE/editor and operating-system files
+.idea/
+.fleet/
+.history/
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
+.AppleDouble/
+._*
