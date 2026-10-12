@@ -76,8 +76,8 @@ Create and update requests validate field types, required values, lengths, fundi
 ## Verification status
 
 - Frontend production build: `npm run build --prefix frontend` succeeded with Vite 6.4.4; 33 modules were transformed.
-- Backend API smoke check: `npm run test:api --prefix backend` was attempted and stopped because `MONGODB_URI` is not configured (`MONGODB_URI is required. Configure backend/.env before running the API smoke test.`).
-- MongoDB-backed CRUD and connection-request persistence, including the health endpoint against a running API, have not been verified because no database URI was available.
+- Backend API smoke check: `npm run test:api --prefix backend` passed. It verified health, validation, startup creation, filtered listing, detail retrieval, update, connection-request persistence, deletion, and cleanup.
+- The API smoke check exercised MongoDB-backed operations successfully. No database connection string or credentials are included in this documentation.
 - The frontend dependency installation reported 0 vulnerabilities. A separate prior backend dependency installation reported 3 high-severity advisories; dependencies were not automatically upgraded.
 
 ## CodeZero-assisted development
